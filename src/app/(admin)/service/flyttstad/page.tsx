@@ -40,13 +40,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 type CleaningBooking = {
   _id: string;
-  bookingNumber?: string;
+  bookingNumber?: string | number;
   ref?: string;
   name?: string;
   customerName?: string;
   customer?: string;
-  date?: string; // e.g. "2025-10-07"
+  date?: string; // e.g. "2025-10-07" or ISO
   time?: string; // e.g. "14:30"
+  status?: "pending" | "confirmed" | "cancelled";
 };
 
 export default function CleaningPage() {
@@ -71,13 +72,11 @@ export default function CleaningPage() {
 
         const res = await api.getBookingsCleaning(token);
         const data = await res.json().catch(() => ({}));
-        console.log("Fetched cleaning bookings:", data);
 
         if (!res.ok) {
           setError(data?.message || "Kunde inte hämta bokningar.");
           setBookings([]);
         } else {
-          // accept array or {data:[...]} or {bookings:[...]}
           const list = Array.isArray(data)
             ? data
             : Array.isArray(data?.data)
@@ -97,19 +96,17 @@ export default function CleaningPage() {
   }, []);
 
   const total = bookings.length;
+
   function formatDateOnly(input?: string) {
     if (!input) return "—";
-
     let d: Date;
     if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
-      // Avoid timezone shifts for plain dates
       const [y, m, day] = input.split("-").map(Number);
       d = new Date(Date.UTC(y, m - 1, day));
     } else {
-      d = new Date(input); // ISO like "2025-10-16T00:00:00.000Z"
+      d = new Date(input);
     }
     if (isNaN(+d)) return "—";
-
     return new Intl.DateTimeFormat("sv-SE", {
       year: "numeric",
       month: "short",
@@ -118,16 +115,25 @@ export default function CleaningPage() {
     }).format(d);
   }
 
-  const formatWhen = (b: CleaningBooking) => {
-    // prefer explicit date, else fall back to startsAt
-    if (b.date) return formatDateOnly(b.date);
-    return "—";
-  };
+  const formatWhen = (b: CleaningBooking) =>
+    b.date ? formatDateOnly(b.date) : "—";
+
   const displayNumber = (b: CleaningBooking) =>
     b.bookingNumber ?? b.ref ?? b._id?.slice(-6).toUpperCase();
 
   const displayName = (b: CleaningBooking) =>
     b.name ?? b.customerName ?? b.customer ?? "—";
+
+  function StatusBadge({ status }: { status?: CleaningBooking["status"] }) {
+    if (!status) return <span>—</span>;
+    const variant =
+      status === "confirmed"
+        ? "default"
+        : status === "cancelled"
+        ? "destructive"
+        : "secondary";
+    return <Badge variant={variant}>{status}</Badge>;
+  }
 
   async function onDelete(id: string) {
     setActingId(id);
@@ -158,7 +164,6 @@ export default function CleaningPage() {
         },
       });
       if (!res.ok) throw new Error(await res.text());
-      // Optionally toast success here
     } catch {
       setError("Kunde inte skicka bekräftelsen.");
     } finally {
@@ -190,7 +195,7 @@ export default function CleaningPage() {
         <div>
           <CardTitle>Flyttstäd – Bokningar</CardTitle>
           <CardDescription>
-            Översikt med bokningsnummer, namn och tid.
+            Översikt med bokningsnummer, namn, datum och status.
           </CardDescription>
         </div>
         <Badge variant="secondary">{total} st</Badge>
@@ -212,10 +217,12 @@ export default function CleaningPage() {
                 <TableRow>
                   <TableHead className="w-[160px]">Bokningsnr</TableHead>
                   <TableHead>Namn</TableHead>
-                  <TableHead>Datum & tid</TableHead>
+                  <TableHead>Datum</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Åtgärder</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
                 {bookings.map((b) => {
                   const id = b._id;
@@ -228,6 +235,10 @@ export default function CleaningPage() {
                       </TableCell>
                       <TableCell>{displayName(b)}</TableCell>
                       <TableCell>{formatWhen(b)}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={b.status} />
+                      </TableCell>
+
                       <TableCell className="text-right space-x-2">
                         <Button
                           variant="outline"

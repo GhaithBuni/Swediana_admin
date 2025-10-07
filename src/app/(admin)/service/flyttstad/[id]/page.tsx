@@ -1,9 +1,10 @@
+// app/(dashboard)/admin/cleaning/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authStorage } from "@/app/lib/auth";
-
+import { use } from "react";
 import {
   Card,
   CardHeader,
@@ -37,7 +38,7 @@ import {
   X,
   Save,
 } from "lucide-react";
-import { use } from "react";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 type YesNo = "JA" | "NEJ";
@@ -70,7 +71,8 @@ type CleaningBooking = {
   phone?: string;
   personalNumber?: string;
   message?: string;
-  date: string; // ISO
+  date: string; // ISO (date+time)
+  time: string;
   priceDetails?: PriceDetails;
   status: "pending" | "confirmed" | "cancelled";
   createdAt: string;
@@ -79,9 +81,10 @@ type CleaningBooking = {
 
 type EditState = {
   date: string; // yyyy-mm-dd
+  time: string; // HH:mm
   email: string;
   phone: string;
-  size: string; // keep as string in inputs
+  size: string; // keep as string for input
   base: string;
   extras: string;
   grandTotal: string;
@@ -102,26 +105,67 @@ const currency = (n?: number) =>
       }).format(n)
     : "—";
 
-function formatDateOnly(input?: string) {
+function formatDateTimeSV(input?: string) {
   if (!input) return "—";
   const d = new Date(input);
   if (isNaN(+d)) return "—";
-  return new Intl.DateTimeFormat("sv-SE", {
+  const date = new Intl.DateTimeFormat("sv-SE", {
     year: "numeric",
     month: "short",
     day: "2-digit",
     timeZone: "Europe/Stockholm",
   }).format(d);
+  const time = new Intl.DateTimeFormat("sv-SE", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Stockholm",
+  }).format(d);
+  return `${date} kl ${time}`;
 }
+
 function toInputYMD(input?: string) {
   if (!input) return "";
   const d = new Date(input);
   if (isNaN(+d)) return "";
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+
+function formatDateTimeSVFromParts(dateISO?: string, time?: string) {
+  if (!dateISO) return "—";
+  // Render date using Stockholm; append provided time string
+  const d = new Date(dateISO);
+  if (isNaN(+d)) return "—";
+  const date = new Intl.DateTimeFormat("sv-SE", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    timeZone: "Europe/Stockholm",
+  }).format(d);
+  const t = time && /^\d{2}:\d{2}$/.test(time) ? time : "00:00";
+  return `${date} kl ${t}`;
+}
+
+function toInputHM(input?: string) {
+  if (!input) return "";
+  const d = new Date(input);
+  if (isNaN(+d)) return "";
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+// Combine yyyy-mm-dd + HH:mm into an ISO string using LOCAL time
+function combineLocalYmdHmToISO(ymd: string, hm: string) {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const [hh, mm] = (hm || "00:00").split(":").map(Number);
+  // Local time date (avoids timezone off-by-one)
+  const local = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
+  return local.toISOString();
+}
+
 const isEmail = (s: string) => /^\S+@\S+\.\S+$/.test(s);
 
 export default function CleaningDetailPage({
@@ -142,7 +186,7 @@ export default function CleaningDetailPage({
   const [edit, setEdit] = useState<EditState | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // load booking
+  // Load booking
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -169,14 +213,15 @@ export default function CleaningDetailPage({
     })();
   }, [id]);
 
-  // prepare edit state
+  // Prepare edit state
   useEffect(() => {
     if (!booking) return;
     const base = booking.priceDetails?.totals?.base ?? 0;
     const extras = booking.priceDetails?.totals?.extras ?? 0;
     const grand = booking.priceDetails?.totals?.grandTotal ?? base + extras;
     setEdit({
-      date: toInputYMD(booking.date),
+      date: toInputYMD(booking.date), // "YYYY-MM-DD"
+      time: booking.time || "08:00", // fall back to 08:00 if missing
       email: booking.email || "",
       phone: booking.phone || "",
       size: String(booking.size ?? ""),
@@ -204,6 +249,7 @@ export default function CleaningDetailPage({
     const grand = booking.priceDetails?.totals?.grandTotal ?? base + extras;
     setEdit({
       date: toInputYMD(booking.date),
+      time: toInputHM(booking.date) || "08:00",
       email: booking.email || "",
       phone: booking.phone || "",
       size: String(booking.size ?? ""),
@@ -219,6 +265,7 @@ export default function CleaningDetailPage({
     if (!edit) return false;
     const errs: Record<string, string> = {};
     if (!edit.date) errs.date = "Välj datum";
+    if (!edit.time) errs.time = "Välj tid";
     if (!edit.email || !isEmail(edit.email)) errs.email = "Ogiltig e-post";
     if (!edit.phone) errs.phone = "Ange telefon";
     const sizeNum = parseFloat(edit.size);
@@ -236,8 +283,13 @@ export default function CleaningDetailPage({
 
     try {
       const token = authStorage.getToken?.();
+
+      // Combine date + time to ISO
+      const isoDate = combineLocalYmdHmToISO(edit.date, edit.time);
+
       const payload = {
-        date: new Date(edit.date).toISOString(),
+        date: edit.date, // <-- send plain "YYYY-MM-DD"
+        time: edit.time, // <-- send "HH:mm"
         email: edit.email.trim().toLowerCase(),
         phone: edit.phone.trim(),
         size: parseFloat(edit.size) || 0,
@@ -363,7 +415,7 @@ export default function CleaningDetailPage({
             Bokning #{booking.bookingNumber} – {booking.name}
           </CardTitle>
           <CardDescription className="truncate">
-            Flyttstäd • {formatDateOnly(booking.date)}
+            Flyttstäd • {formatDateTimeSVFromParts(booking.date, booking.time)}
           </CardDescription>
         </div>
 
@@ -423,8 +475,10 @@ export default function CleaningDetailPage({
         {/* Overview */}
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <p className="text-xs text-muted-foreground">Datum</p>
-            <p className="font-medium">{formatDateOnly(booking.date)}</p>
+            <p className="text-xs text-muted-foreground">Datum & tid</p>
+            <p className="font-medium">
+              {formatDateTimeSVFromParts(booking.date, booking.time)}
+            </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Kund</p>
@@ -465,6 +519,21 @@ export default function CleaningDetailPage({
                 />
                 {fieldErrors.date && (
                   <p className="text-xs text-red-600">{fieldErrors.date}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-time">Tid</Label>
+                <Input
+                  id="edit-time"
+                  type="time"
+                  value={edit.time}
+                  onChange={(e) =>
+                    setEdit((s) => (s ? { ...s, time: e.target.value } : s))
+                  }
+                />
+                {fieldErrors.time && (
+                  <p className="text-xs text-red-600">{fieldErrors.time}</p>
                 )}
               </div>
 
@@ -700,8 +769,8 @@ export default function CleaningDetailPage({
 
       <CardFooter className="flex flex-wrap gap-2 justify-between">
         <div className="text-xs text-muted-foreground">
-          Skapad: {formatDateOnly(booking.createdAt)} • Uppdaterad:{" "}
-          {formatDateOnly(booking.updatedAt)}
+          Skapad: {formatDateTimeSV(booking.createdAt)} • Uppdaterad:{" "}
+          {formatDateTimeSV(booking.updatedAt)}
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.back()}>
