@@ -23,6 +23,7 @@ const NAV = [
   { href: "/dashboard", label: "Översikt" },
   { href: "/service/flyttstad", label: "Flyttstäd" },
   { href: "/service/flytthjalp", label: "Flytt" },
+  { href: "/calendar/flyttstad", label: "Calendar" },
 ];
 
 export default function AdminLayout({
