@@ -22,7 +22,7 @@ import { Menu, LogOut } from "lucide-react";
 const NAV = [
   { href: "/dashboard", label: "Översikt" },
   { href: "/service/flyttstad", label: "Flyttstäd" },
-  { href: "/admin/moving", label: "Flytt" },
+  { href: "/service/flytthjalp", label: "Flytt" },
 ];
 
 export default function AdminLayout({
