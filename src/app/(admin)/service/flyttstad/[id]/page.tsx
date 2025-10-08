@@ -68,6 +68,7 @@ type CleaningBooking = {
   Inglasadduschhörna?: YesNo;
   name: string;
   email: string;
+  addressStreet: string;
   phone?: string;
   personalNumber?: string;
   message?: string;
@@ -83,6 +84,7 @@ type EditState = {
   date: string; // yyyy-mm-dd
   time: string; // HH:mm
   email: string;
+  addressStreet: string;
   phone: string;
   size: string; // keep as string for input
   base: string;
@@ -224,6 +226,7 @@ export default function CleaningDetailPage({
       time: booking.time || "08:00", // fall back to 08:00 if missing
       email: booking.email || "",
       phone: booking.phone || "",
+      addressStreet: booking.addressStreet || "",
       size: String(booking.size ?? ""),
       base: String(base),
       extras: String(extras),
@@ -251,6 +254,7 @@ export default function CleaningDetailPage({
       date: toInputYMD(booking.date),
       time: toInputHM(booking.date) || "08:00",
       email: booking.email || "",
+      addressStreet: booking.addressStreet || "",
       phone: booking.phone || "",
       size: String(booking.size ?? ""),
       base: String(base),
@@ -267,6 +271,7 @@ export default function CleaningDetailPage({
     if (!edit.date) errs.date = "Välj datum";
     if (!edit.time) errs.time = "Välj tid";
     if (!edit.email || !isEmail(edit.email)) errs.email = "Ogiltig e-post";
+    if (!edit.addressStreet) errs.addressStreet = "Ange adress";
     if (!edit.phone) errs.phone = "Ange telefon";
     const sizeNum = parseFloat(edit.size);
     if (Number.isNaN(sizeNum) || sizeNum <= 0) errs.size = "Ogiltig yta";
@@ -292,6 +297,7 @@ export default function CleaningDetailPage({
         time: edit.time, // <-- send "HH:mm"
         email: edit.email.trim().toLowerCase(),
         phone: edit.phone.trim(),
+        addressStreet: edit.addressStreet.trim(),
         size: parseFloat(edit.size) || 0,
         status: edit.status,
         priceDetails: {
@@ -488,6 +494,7 @@ export default function CleaningDetailPage({
             <p className="text-xs text-muted-foreground">E-post</p>
             <p className="font-medium">{booking.email}</p>
           </div>
+
           <div>
             <p className="text-xs text-muted-foreground">Telefon</p>
             <p className="font-medium">{booking.phone || "—"}</p>
@@ -549,6 +556,24 @@ export default function CleaningDetailPage({
                 />
                 {fieldErrors.email && (
                   <p className="text-xs text-red-600">{fieldErrors.email}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-addressStreet">Gatuadress</Label>
+                <Input
+                  id="edit-addressStreet"
+                  type="text"
+                  value={edit.addressStreet}
+                  onChange={(e) =>
+                    setEdit((s) =>
+                      s ? { ...s, addressStreet: e.target.value } : s
+                    )
+                  }
+                />
+                {fieldErrors.addressStreet && (
+                  <p className="text-xs text-red-600">
+                    {fieldErrors.addressStreet}
+                  </p>
                 )}
               </div>
 
@@ -650,6 +675,10 @@ export default function CleaningDetailPage({
           <div>
             <p className="text-xs text-muted-foreground">Postnummer</p>
             <p className="font-medium">{booking.address?.postcode}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Adress</p>
+            <p className="font-medium">{booking.addressStreet}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Boendetyp</p>
