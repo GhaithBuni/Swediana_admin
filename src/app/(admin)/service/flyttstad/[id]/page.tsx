@@ -342,7 +342,7 @@ export default function CleaningDetailPage({
     try {
       const token = authStorage.getToken?.();
       const res = await fetch(
-        `${API_URL}/cleaning/${booking._id}/send-confirmation`,
+        `${API_URL}/cleaning/send-confirmation/${booking._id}`,
         {
           method: "POST",
           headers: {

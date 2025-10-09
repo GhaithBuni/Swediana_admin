@@ -156,7 +156,7 @@ export default function CleaningPage() {
     setActingId(id);
     try {
       const token = authStorage.getToken?.();
-      const res = await fetch(`${API_URL}/cleaning/${id}/send-confirmation`, {
+      const res = await fetch(`${API_URL}/cleaning/send-confirmation/${id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

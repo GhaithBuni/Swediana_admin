@@ -363,7 +363,7 @@ export default function MovingDetailPage({
     try {
       const token = authStorage.getToken?.();
       const res = await fetch(
-        `${API_URL}/moving/${booking._id}/send-confirmation`,
+        `${API_URL}/moving/send-confirmation/${booking._id}`,
         {
           method: "POST",
           headers: {

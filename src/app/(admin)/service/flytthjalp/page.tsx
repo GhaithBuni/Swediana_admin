@@ -166,7 +166,7 @@ export default function MovingPage() {
     setActingId(id);
     try {
       const token = authStorage.getToken?.();
-      const res = await fetch(`${API_URL}/moving/${id}/send-confirmation`, {
+      const res = await fetch(`${API_URL}/moving/send-confirmation//${id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
