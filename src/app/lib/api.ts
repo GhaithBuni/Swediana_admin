@@ -37,6 +37,11 @@ export const api = {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     }),
+  getLockedDatesMoving: (token: string) =>
+    fetch(base("/moving/locked-dates/all"), {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    }),
 
   addLockedDate: (token: string, ymd: string) =>
     fetch(base("/cleaning/locked-dates"), {
@@ -47,9 +52,23 @@ export const api = {
       },
       body: JSON.stringify({ date: ymd }), // backend expects { date: "YYYY-MM-DD" }
     }),
+  addLockedDateMoving: (token: string, ymd: string) =>
+    fetch(base("/moving/locked-dates"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ date: ymd }), // backend expects { date: "YYYY-MM-DD" }
+    }),
 
   deleteLockedDate: (token: string, ymd: string) =>
     fetch(base(`/cleaning/locked-dates/${ymd}`), {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  deleteLockedDateMoving: (token: string, ymd: string) =>
+    fetch(base(`/moving/locked-dates/${ymd}`), {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     }),
@@ -74,5 +93,12 @@ export const api = {
     fetch(base(`/discount/${encodeURIComponent(idOrCode)}`), {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  registerAdmin: (username: string, password: string) =>
+    fetch(base("/admin/register"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
     }),
 };

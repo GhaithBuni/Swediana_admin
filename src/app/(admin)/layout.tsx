@@ -1,9 +1,9 @@
-// app/(dashboard)/admin/layout.tsx (or wherever your AdminLayout lives)
+// app/(dashboard)/admin/layout.tsx
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { authStorage } from "@/app/lib/auth";
 
@@ -17,15 +17,41 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, ChevronDown } from "lucide-react";
 
-const NAV = [
+// shadcn navigation menu (desktop)
+import {
+  NavigationMenu,
+  NavigationMenuList,
+  NavigationMenuItem,
+  NavigationMenuTrigger,
+  NavigationMenuContent,
+  NavigationMenuLink,
+} from "@/components/ui/navigation-menu";
+
+// shadcn accordion (mobile groups)
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
+
+const TOP_NAV = [
   { href: "/dashboard", label: "Översikt" },
+  { href: "/register", label: "Registrera" },
+  { href: "/discount", label: "Rabatter" },
+];
+
+const SERVICE_LINKS = [
   { href: "/service/flyttstad", label: "Flyttstäd" },
   { href: "/service/flytthjalp", label: "Flytt" },
-  { href: "/service/byggstad", label: "ByggStäd" },
-  { href: "/calendar/flyttstad", label: "Calendar" },
-  { href: "/discount", label: "Rabatter" },
+  { href: "/service/byggstad", label: "Byggstäd" },
+];
+
+const CALENDAR_LINKS = [
+  { href: "/calendar/flyttstad", label: "Kalender • Städ" },
+  { href: "/calendar/flytthjalp", label: "Kalender • Flytt" },
 ];
 
 export default function AdminLayout({
@@ -35,6 +61,7 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     if (!authStorage.isAuthenticated()) {
@@ -58,7 +85,6 @@ export default function AdminLayout({
           <div className="flex h-16 items-center justify-between gap-3">
             {/* Brand */}
             <Link href="/admin" className="flex items-center gap-2 shrink-0">
-              {/* Swap /logo.svg to your asset */}
               <Image
                 src="/logo.svg"
                 width={28}
@@ -74,7 +100,8 @@ export default function AdminLayout({
 
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-1">
-              {NAV.map((item) => (
+              {/* top-level simple links */}
+              {TOP_NAV.map((item) => (
                 <Button
                   key={item.href}
                   asChild
@@ -85,6 +112,50 @@ export default function AdminLayout({
                   <Link href={item.href}>{item.label}</Link>
                 </Button>
               ))}
+
+              {/* Services menu */}
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="rounded-xl">
+                      Tjänster
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent className="p-2">
+                      <div className="grid min-w-[260px] gap-1 p-1">
+                        {SERVICE_LINKS.map((l) => (
+                          <NavMenuRow
+                            key={l.href}
+                            href={l.href}
+                            active={isActive(l.href)}
+                          >
+                            {l.label}
+                          </NavMenuRow>
+                        ))}
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+
+                  {/* Calendar menu */}
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="rounded-xl">
+                      Kalender
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent className="p-2">
+                      <div className="grid min-w-[260px] gap-1 p-1">
+                        {CALENDAR_LINKS.map((l) => (
+                          <NavMenuRow
+                            key={l.href}
+                            href={l.href}
+                            active={isActive(l.href)}
+                          >
+                            {l.label}
+                          </NavMenuRow>
+                        ))}
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
             </div>
 
             {/* Right actions (desktop) */}
@@ -97,13 +168,13 @@ export default function AdminLayout({
 
             {/* Mobile menu */}
             <div className="md:hidden">
-              <Sheet>
+              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="icon" className="shrink-0">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-72">
+                <SheetContent side="left" className="w-80">
                   <SheetHeader>
                     <SheetTitle className="flex items-center gap-2">
                       <Image
@@ -117,21 +188,85 @@ export default function AdminLayout({
                     </SheetTitle>
                   </SheetHeader>
 
+                  {/* Simple links */}
                   <div className="mt-4 space-y-1">
-                    {NAV.map((item) => (
+                    {TOP_NAV.map((item) => (
                       <Button
                         key={item.href}
                         asChild
                         variant={isActive(item.href) ? "secondary" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => {
-                          // close sheet via navigation
+                          setMobileOpen(false);
                           router.push(item.href);
                         }}
                       >
                         <Link href={item.href}>{item.label}</Link>
                       </Button>
                     ))}
+                  </div>
+
+                  {/* Grouped sections */}
+                  <div className="mt-4">
+                    <Accordion type="multiple" defaultValue={["services"]}>
+                      <AccordionItem value="services" className="border-none">
+                        <AccordionTrigger className="px-2 rounded-lg hover:no-underline">
+                          <span className="flex items-center gap-2">
+                            <ChevronDown className="h-4 w-4" />
+                            Tjänster
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-1 px-2">
+                            {SERVICE_LINKS.map((l) => (
+                              <Button
+                                key={l.href}
+                                asChild
+                                variant={
+                                  isActive(l.href) ? "secondary" : "ghost"
+                                }
+                                className="w-full justify-start"
+                                onClick={() => {
+                                  setMobileOpen(false);
+                                  router.push(l.href);
+                                }}
+                              >
+                                <Link href={l.href}>{l.label}</Link>
+                              </Button>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="calendar" className="border-none">
+                        <AccordionTrigger className="px-2 rounded-lg hover:no-underline">
+                          <span className="flex items-center gap-2">
+                            <ChevronDown className="h-4 w-4" />
+                            Kalender
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-1 px-2">
+                            {CALENDAR_LINKS.map((l) => (
+                              <Button
+                                key={l.href}
+                                asChild
+                                variant={
+                                  isActive(l.href) ? "secondary" : "ghost"
+                                }
+                                className="w-full justify-start"
+                                onClick={() => {
+                                  setMobileOpen(false);
+                                  router.push(l.href);
+                                }}
+                              >
+                                <Link href={l.href}>{l.label}</Link>
+                              </Button>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                   </div>
 
                   <Separator className="my-4" />
@@ -153,8 +288,33 @@ export default function AdminLayout({
         </div>
       </nav>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="max-w-7xl mx-auto px-4 py-8">{children}</main>
     </div>
+  );
+}
+
+/* ---------- small helpers ---------- */
+
+function NavMenuRow({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <NavigationMenuLink asChild>
+      <Link
+        href={href}
+        className={`rounded-lg px-3 py-2 text-sm hover:bg-accent ${
+          active ? "bg-accent" : ""
+        }`}
+      >
+        {children}
+      </Link>
+    </NavigationMenuLink>
   );
 }

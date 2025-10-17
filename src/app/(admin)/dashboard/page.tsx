@@ -43,15 +43,26 @@ type CleaningBooking = {
   bookingNumber?: number;
   name?: string;
   email?: string;
-  date?: string; // ISO or Y-M-D
+  date?: string; // ISO or YYYY-MM-DD
   time?: string; // "HH:mm"
   status?: Status;
   createdAt?: string;
   service?: "cleaning";
 };
 
-type AnyBooking = (MovingBooking | CleaningBooking) & {
-  service: "moving" | "cleaning";
+type ByggBooking = {
+  _id: string;
+  bookingNumber?: number;
+  name?: string;
+  email?: string;
+  date?: string; // ISO or YYYY-MM-DD
+  status?: Status;
+  createdAt?: string;
+  service?: "bygg";
+};
+
+type AnyBooking = (MovingBooking | CleaningBooking | ByggBooking) & {
+  service: "moving" | "cleaning" | "bygg";
 };
 
 export default function AdminDashboardPage() {
@@ -61,6 +72,7 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState<string>("");
   const [moving, setMoving] = useState<MovingBooking[]>([]);
   const [cleaning, setCleaning] = useState<CleaningBooking[]>([]);
+  const [bygg, setBygg] = useState<ByggBooking[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -75,8 +87,8 @@ export default function AdminDashboardPage() {
           return;
         }
 
-        // Fetch both in parallel
-        const [resMoving, resCleaning] = await Promise.all([
+        // Fetch all three in parallel
+        const [resMoving, resCleaning, resBygg] = await Promise.all([
           fetch(`${API_URL}/moving`, {
             headers: { Authorization: `Bearer ${token}` },
             cache: "no-store",
@@ -85,15 +97,23 @@ export default function AdminDashboardPage() {
             headers: { Authorization: `Bearer ${token}` },
             cache: "no-store",
           }),
+          fetch(`${API_URL}/bygg`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          }),
         ]);
 
-        const [dataMoving, dataCleaning] = await Promise.all([
+        const [dataMoving, dataCleaning, dataBygg] = await Promise.all([
           resMoving.json().catch(() => []),
           resCleaning.json().catch(() => []),
+          resBygg.json().catch(() => []),
         ]);
 
         if (!resMoving.ok) {
-          setError(dataMoving?.message || "Kunde inte hämta flytt-bokningar.");
+          setError(
+            (prev) =>
+              prev || dataMoving?.message || "Kunde inte hämta flytt-bokningar."
+          );
           setMoving([]);
         } else {
           setMoving(
@@ -122,24 +142,44 @@ export default function AdminDashboardPage() {
               : []) as CleaningBooking[]
           );
         }
+
+        if (!resBygg.ok) {
+          setError(
+            (prev) =>
+              prev ||
+              dataBygg?.message ||
+              "Kunde inte hämta byggstäd-bokningar."
+          );
+          setBygg([]);
+        } else {
+          setBygg(
+            (Array.isArray(dataBygg)
+              ? dataBygg
+              : Array.isArray(dataBygg?.data)
+              ? dataBygg.data
+              : []) as ByggBooking[]
+          );
+        }
       } catch {
         setError("Nätverksfel. Försök igen.");
         setMoving([]);
         setCleaning([]);
+        setBygg([]);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  // Merge + normalize for the “Recent” table
+  // Merge + sort by createdAt desc, take last 10
   const recent: AnyBooking[] = useMemo(() => {
     const m = (moving || []).map((b) => ({ ...b, service: "moving" as const }));
     const c = (cleaning || []).map((b) => ({
       ...b,
       service: "cleaning" as const,
     }));
-    const merged = [...m, ...c];
+    const g = (bygg || []).map((b) => ({ ...b, service: "bygg" as const }));
+    const merged = [...m, ...c, ...g];
 
     const ts = (d?: string) => {
       if (!d) return 0;
@@ -147,20 +187,21 @@ export default function AdminDashboardPage() {
       return Number.isFinite(t) ? t : 0;
     };
 
-    merged.sort((a, b) => ts(b.createdAt as any) - ts(a.createdAt as any)); // newest first
+    merged.sort((a, b) => ts(b.createdAt) - ts(a.createdAt)); // newest first
     return merged.slice(0, 10);
-  }, [moving, cleaning]);
+  }, [moving, cleaning, bygg]);
 
   // Stats
   const totalMoving = moving.length;
   const totalCleaning = cleaning.length;
+  const totalBygg = bygg.length;
 
   const todayYMD = ymdFromDate(new Date());
-  const countToday = [...moving, ...cleaning].filter(
+  const countToday = [...moving, ...cleaning, ...bygg].filter(
     (b) => toYMD(b.date) === todayYMD
   ).length;
 
-  const countUpcoming = [...moving, ...cleaning].filter((b) => {
+  const countUpcoming = [...moving, ...cleaning, ...bygg].filter((b) => {
     if (!b.date) return false;
     const time = new Date(b.date).getTime();
     return !isNaN(time) && time > Date.now();
@@ -183,22 +224,27 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       {/* Stats */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard label="Totalt – Flytt" value={totalMoving} />
         <StatCard label="Totalt – Städ" value={totalCleaning} />
-        <StatCard label="Idag" value={countToday} />
+        <StatCard label="Totalt – Byggstäd" value={totalBygg} />
+        <StatCard label="Idag" value={countToday} /> {/* ⬅️ NEW */}
         <StatCard label="Kommande" value={countUpcoming} />
       </section>
 
       {/* Quick links */}
-      <section className="grid gap-4 sm:grid-cols-2">
+      <section className="grid gap-4 sm:grid-cols-3">
         <QuickLink
           title="Visa alla flyttbokningar"
-          onClick={() => router.push("/admin/moving")}
+          onClick={() => router.push("/service/flytthjalp")}
         />
         <QuickLink
           title="Visa alla flyttstäd-bokningar"
-          onClick={() => router.push("/admin/cleaning")}
+          onClick={() => router.push("/service/flyttstad")}
+        />
+        <QuickLink
+          title="Visa alla byggstäd-bokningar"
+          onClick={() => router.push("/service/byggstad")}
         />
       </section>
 
@@ -245,8 +291,20 @@ export default function AdminDashboardPage() {
                       (b._id ? b._id.slice(-6).toUpperCase() : "—");
                     const name = b.name || "—";
                     const dateLabel = formatDateOnly(b.date);
+
                     const serviceLabel =
-                      b.service === "moving" ? "Flytt" : "Flyttstäd";
+                      b.service === "moving"
+                        ? "Flytt"
+                        : b.service === "cleaning"
+                        ? "Flyttstäd"
+                        : "Byggstäd";
+
+                    const viewHref =
+                      b.service === "moving"
+                        ? `/service/flytthjalp/${id}`
+                        : b.service === "cleaning"
+                        ? `/service/flyttstad/${id}`
+                        : `/service/byggstad/${id}`;
 
                     return (
                       <TableRow key={`${b.service}-${id}`}>
@@ -273,13 +331,7 @@ export default function AdminDashboardPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              router.push(
-                                b.service === "moving"
-                                  ? `/service/flytthjalp/${id}`
-                                  : `/service/flyttstad/${id}`
-                              )
-                            }
+                            onClick={() => router.push(viewHref)}
                           >
                             <Eye className="mr-1.5 size-4" />
                             Visa
