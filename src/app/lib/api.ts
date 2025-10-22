@@ -14,6 +14,33 @@ export type DiscountPayload = {
   applicableServices?: ("cleaning" | "moving")[];
 };
 
+export type ExtraServicesDTO = {
+  packagingAllRooms: number;
+  packagingKitchen: number;
+  mounting: number;
+};
+
+export type PriceDTO = {
+  pricePerKvm: number;
+  travelFee: number;
+  fixedPrice: number;
+  // we treat pricing as a single profile; backend still accepts an array
+  extraServices: ExtraServicesDTO[];
+};
+
+export type CleanExtraServicesDTO = {
+  Persinner: number;
+  ExtraBadrum: number;
+  ExtraToalett: number;
+  inglassadDusch: number;
+};
+
+export type CleanPriceDTO = {
+  pricePerKvm: number;
+  fixedPrice: number;
+  extraServices: CleanExtraServicesDTO[]; // we’ll use index 0
+};
+
 export const api = {
   login: (username: string, password: string) =>
     fetch(base("/admin/login"), {
@@ -24,6 +51,36 @@ export const api = {
 
   getBookings: (token: string) =>
     fetch(base("/moving"), { headers: { Authorization: `Bearer ${token}` } }),
+
+  getPrice: (token: string) =>
+    fetch(base("/prices"), {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    }),
+  getCleanPrice: (token: string) =>
+    fetch(base("/prices/clean"), {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    }),
+
+  savePrice: (token: string, payload: PriceDTO) =>
+    fetch(base("/prices"), {
+      method: "PATCH", // idempotent update
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    }),
+  saveCleanPrice: (token: string, payload: CleanPriceDTO) =>
+    fetch(base("/prices/clean"), {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    }),
 
   getBookingsCleaning: (token: string) =>
     fetch(base("/cleaning"), { headers: { Authorization: `Bearer ${token}` } }),

@@ -54,6 +54,11 @@ const CALENDAR_LINKS = [
   { href: "/calendar/flytthjalp", label: "Kalender • Flytt" },
 ];
 
+const PRICES_LINKS = [
+  { href: "/prices/stad", label: "Priser • Städ" },
+  { href: "/prices/flytt", label: "Priser • Flytt" },
+];
+
 export default function AdminLayout({
   children,
 }: {
@@ -84,7 +89,10 @@ export default function AdminLayout({
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex h-16 items-center justify-between gap-3">
             {/* Brand */}
-            <Link href="/admin" className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 shrink-0"
+            >
               <Image
                 src="/logo.svg"
                 width={28}
@@ -143,6 +151,25 @@ export default function AdminLayout({
                     <NavigationMenuContent className="p-2">
                       <div className="grid min-w-[260px] gap-1 p-1">
                         {CALENDAR_LINKS.map((l) => (
+                          <NavMenuRow
+                            key={l.href}
+                            href={l.href}
+                            active={isActive(l.href)}
+                          >
+                            {l.label}
+                          </NavMenuRow>
+                        ))}
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="rounded-xl">
+                      Priser
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent className="p-2">
+                      <div className="grid min-w-[260px] gap-1 p-1">
+                        {PRICES_LINKS.map((l) => (
                           <NavMenuRow
                             key={l.href}
                             href={l.href}
