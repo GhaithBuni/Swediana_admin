@@ -101,6 +101,15 @@ export const api = {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     }),
+  getForetagstad: (token: string) =>
+    fetch(base("/foretagstad"), {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  deleteForetagstad: (token: string, id: string) =>
+    fetch(base(`/foretagstad/${id}`), {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
   getLockedDatesMoving: (token: string) =>
     fetch(base("/moving/locked-dates/all"), {
       headers: { Authorization: `Bearer ${token}` },
