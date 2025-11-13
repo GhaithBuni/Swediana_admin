@@ -76,6 +76,8 @@ type ByggBooking = {
   time: string;
   priceDetails?: PriceDetails;
   status: "pending" | "confirmed" | "cancelled";
+  apartmentKeys?: string;
+  cleanType?: "typical" | "inspection";
   createdAt: string;
   updatedAt: string;
 };
@@ -506,6 +508,11 @@ export default function ByggDetailPage({
           <div>
             <p className="text-xs text-muted-foreground">Yta</p>
             <p className="font-medium">{booking.size} m²</p>
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground">Vad som ska städas</p>
+            <p className="font-medium">{booking.cleanType || "—"}</p>
           </div>
         </section>
 

@@ -76,6 +76,8 @@ type CleaningBooking = {
   time: string;
   priceDetails?: PriceDetails;
   status: "pending" | "confirmed" | "cancelled";
+  apartmentKeys?: string;
+  cleanType?: "typical" | "inspection";
   createdAt: string;
   updatedAt: string;
 };
@@ -504,8 +506,16 @@ export default function CleaningDetailPage({
             <p className="font-medium">{booking.personalNumber || "—"}</p>
           </div>
           <div>
+            <p className="text-xs text-muted-foreground">Nycklar</p>
+            <p className="font-medium">{booking.apartmentKeys || "—"}</p>
+          </div>
+          <div>
             <p className="text-xs text-muted-foreground">Yta</p>
             <p className="font-medium">{booking.size} m²</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Vad som ska städas</p>
+            <p className="font-medium">{booking.cleanType || "—"}</p>
           </div>
         </section>
 

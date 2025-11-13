@@ -79,7 +79,7 @@ type MovingBooking = {
   name: string;
   email: string;
   phone: string;
-  personalNumber?: string;
+  pnr?: string;
   apartmentKeys?: string;
   whatToMove?: string;
   message?: string;
@@ -87,6 +87,7 @@ type MovingBooking = {
   date: string; // ISO (can include time)
   time: string;
   status: "pending" | "confirmed" | "cancelled";
+  moveType?: "typical" | "inspection";
 
   priceDetails?: PriceDetails;
 
@@ -519,11 +520,19 @@ export default function MovingDetailPage({
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Personnummer</p>
-            <p className="font-medium">{booking.personalNumber || "—"}</p>
+            <p className="font-medium">{booking.pnr || "—"}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Storlek</p>
             <p className="font-medium">{booking.size} m²</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Nycklar</p>
+            <p className="font-medium">{booking.apartmentKeys || "—"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Vad som ska flyttas</p>
+            <p className="font-medium">{booking.moveType || "—"}</p>
           </div>
         </section>
 

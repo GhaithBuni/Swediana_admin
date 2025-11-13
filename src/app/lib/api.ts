@@ -86,6 +86,13 @@ export const api = {
     fetch(base("/cleaning"), { headers: { Authorization: `Bearer ${token}` } }),
   getBookingsBygg: (token: string) =>
     fetch(base("/bygg"), { headers: { Authorization: `Bearer ${token}` } }),
+  getContacts: (token: string) =>
+    fetch(base("/contact"), { headers: { Authorization: `Bearer ${token}` } }),
+  deleteContact: (token: string, id: string) =>
+    fetch(base(`/contact/${id}`), {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 
   // 🔒 Locked dates
   // If your backend returns plain strings from /cleaning/locked-dates, change the path here.

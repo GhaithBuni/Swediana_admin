@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { authStorage } from "@/app/lib/auth";
+import { Toaster, ToastT } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +48,7 @@ const SERVICE_LINKS = [
   { href: "/service/flyttstad", label: "Flyttstäd" },
   { href: "/service/flytthjalp", label: "Flytt" },
   { href: "/service/byggstad", label: "Byggstäd" },
+  { href: "/service/contact", label: "Kontaktformulär" },
 ];
 
 const CALENDAR_LINKS = [
@@ -317,6 +319,7 @@ export default function AdminLayout({
 
       {/* Main */}
       <main className="max-w-7xl mx-auto px-4 py-8">{children}</main>
+      <Toaster position="top-right" />
     </div>
   );
 }
