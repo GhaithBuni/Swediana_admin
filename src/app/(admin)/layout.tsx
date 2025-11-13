@@ -49,6 +49,7 @@ const SERVICE_LINKS = [
   { href: "/service/flytthjalp", label: "Flytt" },
   { href: "/service/byggstad", label: "Byggstäd" },
   { href: "/service/contact", label: "Kontaktformulär" },
+  { href: "/service/foretagstad", label: "Företagsstäd" },
 ];
 
 const CALENDAR_LINKS = [
