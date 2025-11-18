@@ -50,6 +50,7 @@ const SERVICE_LINKS = [
   { href: "/service/byggstad", label: "Byggstäd" },
   { href: "/service/contact", label: "Kontaktformulär" },
   { href: "/service/foretagstad", label: "Företagsstäd" },
+  { href: "/service/phone", label: "Telefonnummer" },
 ];
 
 const CALENDAR_LINKS = [

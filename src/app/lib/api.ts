@@ -72,6 +72,11 @@ export const api = {
       },
       body: JSON.stringify(payload),
     }),
+  getPhone: (token: string) =>
+    fetch(base("/phone"), {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
   saveCleanPrice: (token: string, payload: CleanPriceDTO) =>
     fetch(base("/prices/clean"), {
       method: "PATCH",
