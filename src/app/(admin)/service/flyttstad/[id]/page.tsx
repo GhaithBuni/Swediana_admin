@@ -330,7 +330,7 @@ export default function CleaningDetailPage({
       setEditing(false);
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "Kunde inte spara ändringarna."
+        e instanceof Error ? e.message : "Kunde inte spara ändringarna.",
       );
     } finally {
       setSaving(false);
@@ -351,7 +351,7 @@ export default function CleaningDetailPage({
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-        }
+        },
       );
       if (!res.ok) {
         const t = await res.text().catch(() => "");
@@ -378,7 +378,7 @@ export default function CleaningDetailPage({
         const t = await res.text().catch(() => "");
         throw new Error(t || "Delete failed");
       }
-      router.push("/admin/cleaning");
+      router.push("/service/flyttstad");
     } catch {
       setError("Kunde inte radera bokningen.");
       setActing(null);
@@ -433,8 +433,8 @@ export default function CleaningDetailPage({
               booking.status === "confirmed"
                 ? "default"
                 : booking.status === "cancelled"
-                ? "destructive"
-                : "secondary"
+                  ? "destructive"
+                  : "secondary"
             }
           >
             {booking.status}
@@ -576,7 +576,7 @@ export default function CleaningDetailPage({
                   value={edit.addressStreet}
                   onChange={(e) =>
                     setEdit((s) =>
-                      s ? { ...s, addressStreet: e.target.value } : s
+                      s ? { ...s, addressStreet: e.target.value } : s,
                     )
                   }
                 />
@@ -631,7 +631,7 @@ export default function CleaningDetailPage({
                             ...s,
                             status: e.target.value as CleaningBooking["status"],
                           }
-                        : s
+                        : s,
                     )
                   }
                   className="w-full border rounded-md px-3 py-2 bg-background"
@@ -678,10 +678,10 @@ export default function CleaningDetailPage({
           </>
         )}
 
-        <Separator />
+        {/* <Separator /> */}
 
         {/* Address */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="text-xs text-muted-foreground">Postnummer</p>
             <p className="font-medium">{booking.address?.postcode}</p>
@@ -714,10 +714,10 @@ export default function CleaningDetailPage({
                 : "—"}
             </p>
           </div>
-        </section>
+        </section> */}
 
         {/* Extras */}
-        <Separator />
+        {/* <Separator />
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="text-xs text-muted-foreground">Persienner</p>
@@ -735,7 +735,7 @@ export default function CleaningDetailPage({
             <p className="text-xs text-muted-foreground">Inglasad duschhörna</p>
             <p className="font-medium">{booking.Inglasadduschhörna ?? "NEJ"}</p>
           </div>
-        </section>
+        </section> */}
 
         {/* Message */}
         {booking.message && (
@@ -758,9 +758,9 @@ export default function CleaningDetailPage({
               <p className="text-xs text-muted-foreground">Prisdetaljer</p>
               <div className="rounded-xl border">
                 <div className="divide-y">
-                  {(booking.priceDetails.lines || []).map((l) => (
+                  {(booking.priceDetails.lines || []).map((l, index) => (
                     <div
-                      key={l.key}
+                      key={`${l.key}-${index}`}
                       className="flex items-center justify-between px-4 py-2"
                     >
                       <div className="min-w-0">
